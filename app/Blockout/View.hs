@@ -25,8 +25,8 @@ import Blockout.Types
 -- Scene dispatch
 -----------------------------------------------------------------------------
 
-viewModel :: props -> Model -> View Model Action
-viewModel _ m =
+viewModel :: context -> props -> Model -> View context Model Action
+viewModel _ _ m =
     H.div_
         [P.class_ "blockout"]
         [ H.div_ [P.class_ "titlebar"] ["BLOCKOUT \x2014 \x1F35C miso"]
@@ -43,8 +43,7 @@ viewModel _ m =
 
 footerText :: Scene -> MisoString
 footerText = \case
-    GameScene ->
-        "\x2190 \x2192 \x2191 \x2193 / numpad 1-9 move \x2022 Q/A W/S E/D rotate \x2022 SPACE drop \x2022 P pause \x2022 ESC menu"
+    GameScene -> "\x2190 \x2192 \x2191 \x2193 / numpad 1-9 move \x2022 Q/A W/S E/D rotate \x2022 SPACE drop \x2022 P pause \x2022 ESC menu"
     MenuScene{} -> "\x2191 \x2193 select \x2022 ENTER confirm \x2022 or press the first letter"
     SetupScene{} -> "\x2191 \x2193 row \x2022 \x2190 \x2192 / ENTER change \x2022 ESC cancel"
     LevelScene{} -> "0-9 pick \x2022 \x2191 \x2193 + ENTER \x2022 ESC back"
@@ -56,7 +55,7 @@ footerText = \case
 -- Menu screens
 -----------------------------------------------------------------------------
 
-menuScreen :: MisoString -> [View Model Action] -> View Model Action
+menuScreen :: MisoString -> [View context Model Action] -> View Model Action
 menuScreen heading contents =
     H.div_
         [P.class_ "menuScreen"]
@@ -66,7 +65,7 @@ menuScreen heading contents =
 selClass :: MisoString -> Bool -> MisoString
 selClass base sel = if sel then base <> " sel" else base
 
-selectable :: Bool -> Action -> MisoString -> View Model Action
+selectable :: Bool -> Action -> MisoString -> View context Model Action
 selectable isSel act label =
     H.div_
         [ P.class_ (selClass "mrow" isSel)
@@ -74,7 +73,7 @@ selectable isSel act label =
         ]
         [text (if isSel then "\x25BA " <> label else label)]
 
-menuView :: MenuItem -> View Model Action
+menuView :: MenuItem -> View context Model Action
 menuView item =
     menuScreen
         "MAIN MENU"
@@ -88,7 +87,7 @@ menuView item =
             ]
         ]
 
-levelView :: Int -> View Model Action
+levelView :: Int -> View context Model Action
 levelView n =
     menuScreen
         "STARTING LEVEL"
@@ -103,7 +102,7 @@ levelView n =
             ]
         ]
 
-setupView :: Int -> Setup -> View Model Action
+setupView :: Int -> Setup -> View context Model Action
 setupView i draft =
     menuScreen "CHOOSE SETUP" (map valueRow [0 .. 5] ++ map buttonRow buttons)
   where
@@ -144,7 +143,7 @@ predefName s = case [name | (name, p) <- toList predefined, p == s] of
     (name : _) -> name
     [] -> "CUSTOM"
 
-helpView :: View Model Action
+helpView :: View context Model Action
 helpView =
     menuScreen "HELP" $
         [ helpRow keys what
@@ -172,7 +171,7 @@ helpView =
             , H.span_ [P.class_ "svalue"] [text what]
             ]
 
-nameView :: Model -> MisoString -> View Model Action
+nameView :: Model -> MisoString -> View context Model Action
 nameView m name =
     menuScreen
         "HALL OF FAME"
@@ -182,7 +181,7 @@ nameView m name =
         , H.div_ [P.class_ "name-entry"] [text (name <> "\x2588")]
         ]
 
-fameView :: Model -> FameItem -> View Model Action
+fameView :: Model -> FameItem -> View context Model Action
 fameView m item =
     menuScreen "HALL OF FAME" $
         [ H.div_ [P.class_ "note"] [text (setupCaption (_setup m))]
@@ -230,7 +229,7 @@ setupCaption s =
 -- Game screen
 -----------------------------------------------------------------------------
 
-gameLayout :: Model -> View Model Action
+gameLayout :: Model -> View context Model Action
 gameLayout m =
     H.div_
         [P.class_ "layout"]
@@ -239,7 +238,7 @@ gameLayout m =
         , rightPanel m
         ]
 
-mobileControls :: Status -> View Model Action
+mobileControls :: Status -> View context Model Action
 mobileControls st =
     H.div_
         [P.class_ "mobile-controls"]
@@ -280,7 +279,7 @@ mobileControls st =
     mcBtnL lbl code = H.button_ [P.class_ "mc-btn mc-lbl", fire code] [text lbl]
     spacer = H.div_ [P.class_ "mc-spacer"] []
 
-pitSvg :: Model -> View Model Action
+pitSvg :: Model -> View context Model Action
 pitSvg m =
     S.svg_
         [ P.width_ "560"
@@ -300,7 +299,7 @@ pitSvg m =
   where
     s = _setup m
 
-leftPanel :: Model -> View Model Action
+leftPanel :: Model -> View context Model Action
 leftPanel m =
     H.div_
         [P.class_ "panel"]
@@ -320,7 +319,7 @@ leftPanel m =
         | any (\(_, _, cz) -> cz == z) (_well m) = faceColor (setupD (_setup m)) z
         | otherwise = "#101010"
 
-rightPanel :: Model -> View Model Action
+rightPanel :: Model -> View context Model Action
 rightPanel m =
     H.div_
         [P.class_ "panel wide"]
@@ -338,7 +337,7 @@ pitCaption :: Setup -> MisoString
 pitCaption s =
     ms (setupW s) <> "\x00D7" <> ms (setupL s) <> "\x00D7" <> ms (setupD s)
 
-infoBox :: MisoString -> MisoString -> View Model Action
+infoBox :: MisoString -> MisoString -> View context Model Action
 infoBox label val =
     H.div_
         [P.class_ "infobox"]
@@ -382,7 +381,7 @@ pointsOf ps = ms (unwords [pt p | p <- ps])
   where
     pt (a, b) = fromMisoString (msd a) <> "," <> fromMisoString (msd b)
 
-poly :: MisoString -> MisoString -> MisoString -> [(Double, Double)] -> View Model Action
+poly :: MisoString -> MisoString -> MisoString -> [(Double, Double)] -> View context Model Action
 poly fillCol strokeCol w ps =
     S.polygon_
         [ SP.points_ (pointsOf ps)
@@ -391,7 +390,7 @@ poly fillCol strokeCol w ps =
         , SP.strokeWidth_ w
         ]
 
-lineSeg :: MisoString -> MisoString -> (Double, Double) -> (Double, Double) -> View Model Action
+lineSeg :: MisoString -> MisoString -> (Double, Double) -> (Double, Double) -> View context Model Action
 lineSeg strokeCol w (ax, ay) (bx, by) =
     S.line_
         [ SP.x1_ (msd ax)
@@ -406,7 +405,7 @@ gridColor :: MisoString
 gridColor = "#00b400"
 
 -- | The green wireframe of the empty pit.
-pitGrid :: Setup -> [View Model Action]
+pitGrid :: Setup -> [View context Model Action]
 pitGrid s =
     concat
         [ [poly "none" gridColor "1" (ring (fi z)) | z <- [0 .. d]]
@@ -452,7 +451,7 @@ sideColor d z = snd (palette !! paletteIx d z)
 plus any side faces that look toward the viewer and are not hidden by a
 neighbouring cube in the same layer.
 -}
-wellCubes :: Setup -> [Cell] -> [View Model Action]
+wellCubes :: Setup -> [Cell] -> [View context Model Action]
 wellCubes s w = concat [layerViews z | z <- [setupD s - 1, setupD s - 2 .. 0]]
   where
     cx = fi (setupW s) / 2
@@ -495,7 +494,7 @@ back by the not-yet-elapsed part of the 90 degree turn about the piece
 centroid (and translated back along any wall-kick offset), so the
 wireframe sweeps smoothly into its final resting orientation.
 -}
-pieceWire :: Setup -> Maybe Spin -> [Cell] -> [View Model Action]
+pieceWire :: Setup -> Maybe Spin -> [Cell] -> [View context Model Action]
 pieceWire s msp cs =
     [lineSeg "#ffffff" "1.5" (corner a) (corner b) | (a, b) <- outlineEdges cs]
   where
@@ -551,7 +550,7 @@ outlineEdges cs =
         2 -> (a && d) || (b && c)
         _ -> False
 
-overlay :: Bool -> Status -> [View Model Action]
+overlay :: Bool -> Status -> [View context Model Action]
 overlay isPractice = \case
     Playing -> []
     Paused ->
