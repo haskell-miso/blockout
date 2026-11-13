@@ -22,7 +22,7 @@ build:
 	cp -v $(my_wasm) public/
 
 optim:
-	wasm-opt -all -O2 public/miso-blockout.wasm -o public/miso-blockout.wasm
+	wasm-opt -all --disable-compact-imports -O2 public/miso-blockout.wasm -o public/miso-blockout.wasm
 	wasm-tools strip -o public/miso-blockout.wasm public/miso-blockout.wasm
 
 serve:
